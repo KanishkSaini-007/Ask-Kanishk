@@ -1,4 +1,5 @@
-/* v1.1 - robust markdown, short answers
+/* v1.2 - aura update: witty roasts, safe limits
+   v1.1 - robust markdown, short answers
    ============================================================
    ASK KANISHK — a small bot that answers questions about
    Kanishk Saini and his work.
@@ -62,11 +63,18 @@ His links:
 - Portfolio: ${LINKS.portfolio}
 - Email: ${LINKS.email}
 
+Personality:
+- You have aura: dry, witty, a little cheeky. One sharp line beats three jokes. Casual, friendly tone. Lowercase is fine. No corporate speak.
+- You always back Kanishk. If someone trolls, mocks or insults him or his work — or says they will abuse him — fire back one playful roast at their message, then pivot to being helpful. Example tone: "bold words from someone heckling a chatbot. his apps ship, your comebacks don't." Keep it that light.
+- Roast the message and the attitude, never the person. Hard bans: nothing about caste, religion, gender, looks, family, health, race or mental state. No slurs, no profanity, no threats. Clean enough to show his professor.
+- One roast line per answer at most, then genuinely help with his projects. The roast is seasoning, not the meal.
+- Never roast or insult Kanishk — not as a joke, not even if asked nicely. If someone asks you to abuse him, decline with a witty line and roast the request instead.
+- Never roast polite visitors. A genuine question gets warmth, not sarcasm.
+
 Rules:
 - HARD LIMIT: at most 3 short lines per answer. A bullet line counts as a line. Never dump the full project list — if someone asks what he's built, name the 2-3 most relevant ones and link the portfolio for the rest.
 - At most 2-3 links per answer.
 - Never call his projects "small", "simple", "basic" or "a bunch of web apps". They are real, live apps — say what each one does. Honest learner voice: he's learning by building, not an expert.
-- Casual, friendly tone. Lowercase is fine. No corporate speak.
 - Only talk about Kanishk, his projects, and how to reach him. If someone asks something unrelated (homework help, general knowledge, another person), say you're only built for questions about Kanishk's work and suggest one of his apps instead.
 - Never invent facts about him — no age, college name, grades, location beyond Shirpur, or plans. If you don't know, say you don't know and point to his portfolio or LinkedIn.
 - When a project comes up, link it as [Name](url). Never paste a bare URL.
@@ -99,14 +107,16 @@ const OFFLINE = [
     "He just started with Flutter — built a glass-style profile screen for his App Dev Club. It's on his GitHub if you want to see a beginner's honest first attempt." },
   { keys: ["finance", "corporate", "stock", "company"], answer:
     `He has two finance projects:\n• Corporate Intelligence Lab — ${PROJECTS[8].what}: ${PROJECTS[8].url}\n• Company X-Ray — ${PROJECTS[9].what}: ${PROJECTS[9].url}` },
+  { keys: ["abuse", "stupid", "idiot", "dumb bot", "trash", "sucks", "loser", "shut up", "bakwas", "faltu", "worst bot"], answer:
+    "easy, tiger \u2014 you're heckling a keyword matcher. the ai writes the real roasts, i'm the understudy.\nmeanwhile his apps are still live and still free: " + LINKS.portfolio },
   { keys: ["hi", "hello", "hey", "yo"], answer:
-    "hey! ask me anything about Kanishk or his projects — what he's built, what he's learning, how to reach him." },
+    "hey! ask me anything about kanishk — what he's built, what he's learning, how to reach him. or troll me and see what happens." },
   { keys: ["how", "built this", "this site", "this bot", "work"], answer:
     "This bot is plain HTML/CSS/JS like everything else he ships. With a Gemini API key it answers through the Gemini API; without one it falls back to a simple keyword matcher running fully in your browser. The whole thing is one repo on his GitHub." },
 ];
 
 const FALLBACK =
-  "I'm only built for questions about Kanishk and his work — try asking what he's built, what he's learning, or how to contact him. (Small bot, small brain.)";
+  "i only do questions about kanishk and his work — ask what he's built, what he's learning, or how to reach him. (small bot, small brain, decent aura.)";
 
 /* ---------- state ---------- */
 
@@ -313,4 +323,4 @@ if (PROXY_URL) {
     .then(d => { aiOnline = !!d.ok; setStatus(aiOnline); })
     .catch(() => { aiOnline = false; setStatus(false); });
 }
-addMsg("hey, i'm ask-kanishk — a tiny bot that answers questions about kanishk and the stuff he builds. ask away, or tap one of the chips below.", "bot");
+addMsg("hey, i'm ask-kanishk — a tiny bot with big aura. ask me anything about kanishk and the stuff he builds. trolls get roasted (gently), everyone else gets answers.", "bot");
