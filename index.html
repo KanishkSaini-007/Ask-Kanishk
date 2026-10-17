@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ask Kanishk</title>
+<meta name="description" content="A small chatbot that answers questions about Kanishk Saini and the things he builds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="mono-label">// ASK_KANISHK v1.0</span>
+    <span class="status" id="status"><span class="dot" id="status-dot"></span><span id="status-text">starting up</span></span>
+  </div>
+</header>
+
+<main class="hero">
+  <h1>ASK<br>KANISHK<span class="lime">.</span></h1>
+  <p class="tagline mono-label">a bot that answers questions about me + the stuff i build</p>
+</main>
+
+<section class="chat" id="chat">
+  <div class="messages" id="messages"></div>
+
+  <div class="chips" id="chips">
+    <button class="chip" data-q="What has Kanishk built?">what has he built?</button>
+    <button class="chip" data-q="What is Kanishk learning right now?">what's he learning?</button>
+    <button class="chip" data-q="Which app should I try first?">which app first?</button>
+    <button class="chip" data-q="How can I contact Kanishk?">contact him</button>
+  </div>
+
+  <form class="composer" id="composer">
+    <input type="text" id="input" placeholder="ask something about kanishk..." autocomplete="off" maxlength="500">
+    <button type="submit" id="send" aria-label="Send">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="13 5 20 12 13 19"></polyline></svg>
+    </button>
+  </form>
+</section>
+
+<footer>
+  <span class="mono-label">built while learning javascript · answers are about my public work only</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
