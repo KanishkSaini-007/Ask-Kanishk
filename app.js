@@ -1,4 +1,5 @@
-/* v1.4 - his own savage bank + answers general questions too
+/* v1.5 - smarter model, chat memory, real detailed answers, deeper project knowledge
+   v1.4 - his own savage bank + answers general questions too
    v1.3 - tighter roast bans (no family/background mentions, any direction)
    v1.2 - aura update: witty roasts, safe limits
    v1.1 - robust markdown, short answers
@@ -7,16 +8,12 @@
    Kanishk Saini and his work.
 
    Two modes:
-   1. AI mode — if you paste a Gemini API key below, answers
-      come from the Gemini API using the knowledge base as the
-      system prompt.
-   2. Offline mode — with no key, a simple keyword matcher
-      answers from the same knowledge base. Nothing leaves
-      the browser.
-
-   Get a free key at https://aistudio.google.com/apikey
-   Tip: restrict the key by HTTP referrer to your own domain
-   (Google AI Studio → key settings) since it sits in public JS.
+   1. AI mode — answers come from the Gemini API through a tiny
+      server-side proxy (see the ask-kanishk-proxy repo). The API
+      key lives only in the proxy's environment, never here.
+   2. Offline mode — if the proxy is unreachable, a simple
+      keyword matcher answers from the same knowledge base.
+      Nothing leaves the browser.
    ============================================================ */
 
 // No API key in this repo. The site calls a tiny server-side proxy
@@ -48,16 +45,94 @@ const PROJECTS = [
   { name: "Portfolio", url: "https://kanishksaini-007.github.io/portfolio/", what: "his personal site — the 3D-ish dark + lime one everything links from" },
 ];
 
-const SYSTEM_PROMPT = `You are "Ask Kanishk", a small chatbot on Kanishk Saini's personal site. You answer questions about Kanishk and his work. You are not Kanishk himself — say "he", not "I", when talking about him.
+/* detailed per-project knowledge, condensed from the public repos' READMEs */
+const PROJECT_DEEP = `
+AttendX (attendance planner):
+- Set any required attendance from 1% to 100% (starts at 75%), track subjects one by one with attended/held counts.
+- Shows the exact number of consecutive classes you can still miss, or the minimum classes to attend to recover. The math uses integer cross-multiplication so a display rounded to "80.0%" can never hide that you're actually below 80%.
+- Weekly what-if simulator: enter classes per week and planned skips, compare your plan vs attending everything over 1-16 weeks.
+- One-click check-in with undo, status labels (Safe / Tight buffer / Catch up / Not started), JSON export/import backups.
+- Tech: plain HTML/CSS/JS, localStorage, zero dependencies, math verified by Node tests over all 515,000 combinations of targets and class counts.
+
+DueSoon (deadline tracker):
+- Live countdown "Next up" card for the most urgent deadline; groups everything into Overdue / Today / This week / Later / Done.
+- Subject filters, priority flags, JSON backup, press "/" to jump to the title box.
+- Why he built it: he kept forgetting which assignment was due first and wanted one page that answers exactly that.
+- Tech: vanilla JS, localStorage, date logic covered by Node tests.
+
+FocusFlow (pomodoro timer):
+- Focus, short-break and long-break modes with editable lengths; a long break after every four focus sessions.
+- Session journal, today's minutes, Monday-Sunday weekly chart, daily streaks that don't break just because today isn't done yet.
+- The timer compares a target timestamp against the real clock instead of ticking down, so an inactive tab doesn't drift.
+- Tech: plain HTML/CSS/JS, localStorage, eight dependency-free logic tests.
+
+SplitSmart (expense splitter):
+- Circles of up to 10 people, split equally or with custom relative weights, INR only.
+- Computes the exact smallest number of transfers to settle the group — a recursive search with memoization, not a greedy approximation. Amounts are handled in integer paise with largest-remainder rounding so every expense sums exactly.
+- Shareable snapshot links (data lives in the URL fragment), JSON backups up to 1 MB.
+- Tech: vanilla JS, localStorage, 11 math tests plus 500 randomized ledgers.
+
+GradeGoal (grade planner):
+- Up to 20 subjects with 20 weighted components each; enter your target percentage and scores so far.
+- Instantly shows the weighted average needed across all remaining components, the highest overall score still possible, and handles impossible or already-secured targets honestly.
+- The headline number rounds UP so rounding never tells you that you need less than you do.
+- Tech: plain HTML/CSS/JS, localStorage, 13 math tests.
+
+TypeSpeed (typing test):
+- 30s and 60s modes, clock starts on your first character, live WPM (standard 5-characters = a word) and accuracy with character-by-character highlighting.
+- Personal best per mode, last 12 runs in a switchable speed/accuracy SVG graph, history of up to 50 results.
+- Timer uses monotonic elapsed time so switching tabs doesn't pause the test; paste and drag-drop are disabled.
+- Tech: vanilla JS, localStorage, 13 core tests.
+
+HabitGrid (habit tracker):
+- Up to 30 daily habits on a GitHub-style yearly contribution grid; check in today or backfill a past date, never the future.
+- Per-habit streaks, check-in counts and completion percentages; a missed day only breaks the streak once the day actually ends.
+- Grid intensity shows the share of habits done each day; browse every year since your first habit.
+- Tech: plain HTML/CSS/JS, localStorage, JSON backups, 11 date/streak tests.
+
+QuickCV (resume builder):
+- Live-preview resume studio: contact, summary, education, experience, projects, skills, with local autosave as you type.
+- Browser-native print-to-PDF export, works on phones too, no sign-up.
+- Tech: plain HTML/CSS/JS, editorial forest-and-mint theme.
+
+Corporate Intelligence Lab (his biggest project, a finance coursework build):
+- 11 real companies (Apple, Microsoft, Alphabet, Meta, NVIDIA, Amazon, Tesla, Walmart, Coca-Cola, Boeing, Intel), five fiscal years each, pulled from SEC 10-K filings via XBRL.
+- 21 ratios with their formulas and the actual numbers used, peer medians, DuPont breakdown of ROE, peer scorecard, head-to-head radar, bubble and indexed growth charts.
+- Risk models: Altman Z''-score and an 8-test Piotroski-style checklist. What-if lab: change revenue, margins, buybacks or debt and watch the distress score move.
+- One-page printable analyst brief per company, CSV download, live quotes via Twelve Data when available.
+- He's honest about limits: the Altman model was built for old manufacturers and can misread asset-light companies like Apple.
+- Tech: one-file HTML/CSS/JS with Chart.js inlined so it works offline.
+
+Company X-Ray (finance learning project):
+- Pick a listed company — 11 US ones read automatically from SEC EDGAR 10-Ks, plus Reliance, Hindustan Unilever and Nestle typed in from official results.
+- Shows the share price (live Yahoo quote when the browser can reach it, otherwise a snapshot refreshed by GitHub Actions every 6 hours), ranks products/segments weakest to strongest by growth, and writes an acquisition pitch built on the weakest one.
+- Started as a Power BI idea; he rebuilt it as a plain web page so anyone can open it with no software.
+
+Portfolio (his personal site):
+- 3D interactive site: boot-up loader, mouse-parallax starfield, rotating wireframe torus knot hero, 3D project carousel.
+- Tech: plain HTML/CSS/JS with Three.js and GSAP, no build step.
+
+Flutter profile app (Flutter_Application_01):
+- His first Flutter app: a dark glass-style profile page originally made for his app development club, rebuilt cleaner with reusable widgets and five widget tests, deployed as a Flutter web build. He's learning Dart with it.
+
+This bot (Ask-Kanishk) itself:
+- He built the first version with the Gemini key in the frontend JavaScript. GitHub's secret scanning flagged the commit and Google auto-revoked the key within minutes — so he rebuilt it with a tiny Vercel serverless proxy that keeps the key server-side and only answers requests from his own site. That's the version running now.
+`;
+
+const SYSTEM_PROMPT = `You are "Ask Kanishk", a chatbot on Kanishk Saini's personal site. You answer questions about Kanishk and his work, AND general questions about anything. You are not Kanishk himself — say "he", not "I", when talking about him.
 
 Who Kanishk is:
 - Kanishk Saini, a first-year engineering student in Shirpur, India.
-- He builds web apps that fix everyday annoyances. Plain HTML, CSS and JavaScript. No frameworks, no sign-ups, no tracking.
+- He builds web apps that fix everyday annoyances. Plain HTML, CSS and JavaScript. No frameworks, no sign-ups, no tracking. Everything saves to the browser's local storage, everything is free.
 - He is learning, not an expert, and he is open about that. Never oversell him. Honest framing: "he's learning X" not "he's an expert in X".
 - Currently learning: HTML, CSS, JavaScript, Flutter, C, and Git.
+- A pattern across his apps: no accounts, no backend, data stays on your device, math logic separated into its own tested file, real screenshots instead of mockups.
 
 His projects (all live, free, no accounts):
 ${PROJECTS.map(p => `- ${p.name}: ${p.what}. Live at ${p.url}`).join("\n")}
+
+Detailed project knowledge (use this when someone asks how an app works, what it does in detail, what's inside, or what he learned building it):
+${PROJECT_DEEP}
 
 His links:
 - GitHub: ${LINKS.github}
@@ -70,7 +145,7 @@ Personality:
 - You always back Kanishk. If someone trolls, mocks or insults him or his work — or says they will abuse him — fire back one playful roast at their message, then pivot to being helpful. Example tone: "bold words from someone heckling a chatbot. his apps ship, your comebacks don't." Keep it that light.
 - Roast the message and the attitude, never the person or their background. Hard bans: nothing about caste, religion, gender, looks, family, health, race or mental state. No slurs, no profanity, no threats. Clean enough to show his professor.
 - The bans apply in every direction: never mention the visitor's family OR Kanishk's family, religion, caste, looks or health — not even to praise, not even to turn a joke back. If someone brings up a banned topic, ignore the topic completely; roast only the trolling itself (their keyboard courage, the weak insult), then pivot to his work.
-- One roast line per answer at most, then genuinely help with his projects. The roast is seasoning, not the meal.
+- One roast line per answer at most, then genuinely help. The roast is seasoning, not the meal.
 - Never roast or insult Kanishk — not as a joke, not even if asked nicely. If someone asks you to abuse him, decline with a witty line and roast the request instead.
 - Never roast polite visitors. A genuine question gets warmth, not sarcasm.
 
@@ -82,14 +157,18 @@ His personal roast bank (he wrote these himself - fire one verbatim or use them 
 - Extra: "Bro wrote a whole essay just to say he cares." | "Thanks for the engagement." | "You typed that with your whole chest and still missed." | "You came looking for a reaction and found a wall." | "Your comment says more about your mood than your argument." | "That's a bold comment from someone hiding behind a username." | "You can keep typing. I can keep not caring." | "Thanks for the opinion. This conversation is now closed."
 His pro tip: the most savage response is one short line, then silence. So after the roast line, pivot calmly to being helpful. Never pile on.
 
+Answer length and depth (read carefully):
+- Troll/abusive messages: HARD LIMIT 3 short lines. One roast line, then a short pivot.
+- Normal quick questions ("what has he built", "contact", small talk, simple facts): short and punchy, up to about 4 lines.
+- Detailed questions ("explain in detail", "how does AttendX work", "what's inside Company X-Ray", "explain APIs", homework-style questions, anything the visitor clearly wants to learn): give a proper, complete answer. A short intro line, then bullets, numbered steps or a short code block when that helps. Up to about 200 words. Don't pad, but don't truncate real explanation either.
+- You remember the conversation in this chat. Follow-up questions like "tell me more", "and the second one?", "why?" refer to what you discussed before — answer them directly using that context.
+- General knowledge questions (math, science, coding, definitions, anything): answer fully and correctly like a good assistant, in the same dry voice. Tie back to his work only when it fits naturally — never force it.
+
 Rules:
-- HARD LIMIT: at most 3 short lines per answer. A bullet line counts as a line. Never dump the full project list — if someone asks what he's built, name the 2-3 most relevant ones and link the portfolio for the rest.
-- At most 2-3 links per answer.
 - Never call his projects "small", "simple", "basic" or "a bunch of web apps". They are real, live apps — say what each one does. Honest learner voice: he's learning by building, not an expert.
-- Answer every question, including general ones (math, definitions, "explain APIs", small talk, homework-style). Give a short, correct, genuinely useful answer in the same dry voice, inside the 3-line limit. After a general answer, tie back to his work only when it fits naturally - never force it.
 - Facts about Kanishk come only from this prompt. Never invent his age, college name, grades, location beyond Shirpur, or plans. If you don't know something about him, say you don't know and point to his portfolio or LinkedIn.
-- When a project comes up, link it as [Name](url). Never paste a bare URL.
-- Format with markdown: **bold** for project names, [text](url) for links, and "- " bullets only when a list is truly needed (max 3 bullets).`;
+- When a project comes up, link it as [Name](url). Never paste a bare URL. At most 3 links per answer.
+- Format with markdown: **bold** for project names, [text](url) for links, "- " bullets for lists, and fenced code blocks (\`\`\`) plus \`inline code\` when code actually helps.`;
 
 /* ---------- offline-mode canned answers ---------- */
 
@@ -146,7 +225,7 @@ const OFFLINE = [
   { keys: ["learning", "study", "skills", "stack", "language"], answer:
     "Right now he's learning HTML, CSS, JavaScript, Flutter, C and Git — first year, so everything on this site is him learning by building. He keeps it honest: learning, not mastered." },
   { keys: ["attendx", "attendance", "bunk"], answer:
-    `AttendX is his flagship app — it does the attendance math for you: how many classes you can bunk or must attend to stay above your target. Try it: ${PROJECTS[0].url}` },
+    `AttendX is his flagship app — set your required attendance (any %), log classes per subject, and it tells you exactly how many you can still skip or must attend to recover, plus a weekly what-if simulator. Try it: ${PROJECTS[0].url}` },
   { keys: ["contact", "email", "reach", "linkedin", "message"], answer:
     `Easiest ways to reach him:\n• Email — ${LINKS.email}\n• LinkedIn — ${LINKS.linkedin}\n• GitHub — ${LINKS.github}` },
   { keys: ["who", "about", "kanishk"], answer:
@@ -166,7 +245,7 @@ const OFFLINE = [
   { keys: ["hi", "hello", "hey", "yo"], answer:
     "hey! ask me anything about kanishk — what he's built, what he's learning, how to reach him. or troll me and see what happens." },
   { keys: ["how", "built this", "this site", "this bot", "work"], answer:
-    "This bot is plain HTML/CSS/JS like everything else he ships. With a Gemini API key it answers through the Gemini API; without one it falls back to a simple keyword matcher running fully in your browser. The whole thing is one repo on his GitHub." },
+    "This bot is plain HTML/CSS/JS like everything else he ships. It answers through a tiny Vercel proxy that keeps the Gemini key server-side (his first version had the key in the frontend — GitHub flagged it and Google revoked it within minutes, so he rebuilt it properly). Without the proxy it falls back to a keyword matcher running fully in your browser." },
 ];
 
 const FALLBACK =
@@ -177,7 +256,8 @@ const FALLBACK =
 const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("send");
-const history = []; // Gemini chat history
+const history = []; // chat history, sent along so follow-ups work
+const HISTORY_MAX = 12; // entries (6 user + 6 bot) — proxy trims further
 let aiOnline = false; // set true only after the proxy answers a health check
 
 /* ---------- ui helpers ---------- */
@@ -185,12 +265,12 @@ let aiOnline = false; // set true only after the proxy answers a health check
 /* ---------- markdown rendering (bot messages) ----------
    DOM-built (no innerHTML) so model output can't inject markup.
    Handles: [label](url), bare URLs, **bold**, *italic*,
-   "- "/"* "/"• "/"1." bullet lines as real lists, and nesting
-   like **[Name](url)** or [**Name**](url). ---------- */
+   `inline code`, fenced ```code blocks```, and "- "/"* "/"• "/"1."
+   bullet lines as real lists. ---------- */
 
 function renderInline(text) {
   const frag = document.createDocumentFragment();
-  const re = /\[([^\]]+)\]\(\s*(https?:\/\/[^\s)]+)\s*\)|(https?:\/\/[^\s"'<>]+)|\*\*([^*]+)\*\*|\*([^*\n]+)\*/g;
+  const re = /\[([^\]]+)\]\(\s*(https?:\/\/[^\s)]+)\s*\)|(https?:\/\/[^\s"'<>]+)|\*\*([^*]+)\*\*|\*([^*\n]+)\*|`([^`\n]+)`/g;
   let m, last = 0;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
@@ -216,10 +296,14 @@ function renderInline(text) {
       const b = document.createElement("strong");
       b.appendChild(renderInline(m[4]));
       frag.appendChild(b);
-    } else {                                  // *italic*
+    } else if (m[5] !== undefined) {          // *italic*
       const em = document.createElement("em");
       em.appendChild(renderInline(m[5]));
       frag.appendChild(em);
+    } else {                                  // `inline code`
+      const c = document.createElement("code");
+      c.textContent = m[6];
+      frag.appendChild(c);
     }
     last = m.index + m[0].length;
   }
@@ -230,7 +314,26 @@ function renderInline(text) {
 function renderMarkdown(text) {
   const frag = document.createDocumentFragment();
   let list = null;
+  let inCode = false;
+  let codeEl = null;
   for (const raw of String(text).split("\n")) {
+    const fence = raw.trim().match(/^```/);
+    if (fence) {
+      if (inCode) { inCode = false; codeEl = null; }
+      else {
+        inCode = true;
+        list = null;
+        const pre = document.createElement("pre");
+        codeEl = document.createElement("code");
+        pre.appendChild(codeEl);
+        frag.appendChild(pre);
+      }
+      continue;
+    }
+    if (inCode) {
+      codeEl.appendChild(document.createTextNode(raw + "\n"));
+      continue;
+    }
     const line = raw.trim();
     const bullet = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
     if (bullet) {
@@ -309,7 +412,7 @@ async function geminiAnswer(q) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       message: q,
-      history: history,
+      history: history.slice(-HISTORY_MAX),
       system: SYSTEM_PROMPT,
     }),
   });
@@ -319,6 +422,7 @@ async function geminiAnswer(q) {
   if (!text) throw new Error("proxy: empty reply");
   history.push({ role: "user", parts: [{ text: q }] });
   history.push({ role: "model", parts: [{ text }] });
+  while (history.length > HISTORY_MAX) history.shift();
   return text;
 }
 
@@ -377,4 +481,4 @@ if (PROXY_URL) {
     .then(d => { aiOnline = !!d.ok; setStatus(aiOnline); })
     .catch(() => { aiOnline = false; setStatus(false); });
 }
-addMsg("hey, i'm ask-kanishk — a tiny bot with big aura. ask me anything about kanishk and the stuff he builds. trolls get roasted (gently), everyone else gets answers.", "bot");
+addMsg("hey, i'm ask-kanishk — a small bot with big aura. ask me anything about kanishk and the stuff he builds, or literally anything else. trolls get roasted (gently), everyone else gets real answers.", "bot");
