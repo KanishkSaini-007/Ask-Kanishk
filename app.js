@@ -335,6 +335,15 @@ function renderMarkdown(text) {
       continue;
     }
     const line = raw.trim();
+    const head = line.match(/^#{1,4}\s+(.+)$/);
+    if (head) {
+      list = null;
+      if (frag.childNodes.length) frag.appendChild(document.createElement("br"));
+      const b = document.createElement("strong");
+      b.appendChild(renderInline(head[1]));
+      frag.appendChild(b);
+      continue;
+    }
     const bullet = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
     if (bullet) {
       if (!list) { list = document.createElement("ul"); frag.appendChild(list); }
