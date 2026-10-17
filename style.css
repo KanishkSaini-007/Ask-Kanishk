@@ -123,7 +123,21 @@ body {
   border-left: 3px solid var(--lime);
   border-radius: 4px 14px 14px 14px;
 }
-.msg.bot a { color: var(--lime); }
+.msg.bot a {
+  color: var(--lime);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-word;
+}
+.msg.bot strong { color: #ffffff; }
+.msg.bot em { color: var(--text); }
+.msg.bot ul {
+  margin: 6px 0 2px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 .msg.user {
   align-self: flex-end;
