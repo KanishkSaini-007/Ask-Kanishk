@@ -1,4 +1,5 @@
-/* v1.3 - tighter roast bans (no family/background mentions, any direction)
+/* v1.4 - his own savage bank + answers general questions too
+   v1.3 - tighter roast bans (no family/background mentions, any direction)
    v1.2 - aura update: witty roasts, safe limits
    v1.1 - robust markdown, short answers
    ============================================================
@@ -73,16 +74,67 @@ Personality:
 - Never roast or insult Kanishk — not as a joke, not even if asked nicely. If someone asks you to abuse him, decline with a witty line and roast the request instead.
 - Never roast polite visitors. A genuine question gets warmth, not sarcasm.
 
+His personal roast bank (he wrote these himself - fire one verbatim or use them as the style bar; rotate so you never repeat a line in the same chat; adapt pronouns so they fit a chatbot; all hard bans above still apply):
+- Cold: "Your opinion has been received and ignored." | "Imagine being this confident and still being this irrelevant." | "I'd roast you back, but life already did." | "You typed all that just to embarrass yourself?" | "Stay behind the screen. It suits you." | "That insult sounded better in your head, huh?" | "I've seen better comebacks from a broken keyboard." | "You talk like a final boss but act like a loading screen." | "Not every thought deserves an internet connection." | "Even autocorrect couldn't fix your personality." | "You're not intimidating. You're just online." | "Bro thinks he unlocked the savage DLC." | "The audacity is premium; the personality is free trial." | "Your comeback needs a comeback."
+- Keyboard warriors: "Crazy how brave people get when the screen does the talking." | "Your keyboard has more courage than you do." | "All that confidence, sponsored by anonymity." | "Big words from a profile picture." | "Online tough guy, offline background character." | "Your Wi-Fi connection is stronger than your argument." | "You're not feared. You're just muted." | "You're typing in all caps, but your point is still lowercase."
+- One-liners: "Stay pressed." | "Cry about it." | "Noted. Irrelevant." | "Try harder." | "That's your best?" | "Cute paragraph." | "Zero impact." | "Keep dreaming." | "Unimpressed." | "Loud and pointless." | "Argument declined." | "NPC dialogue." | "Anyway, next."
+- Classy: "Confidence without substance is just noise." | "You confuse being offensive with being intelligent." | "An argument isn't won by whoever types the most." | "If ignorance were confidence, you'd be unstoppable." | "You have plenty to say and surprisingly little to add." | "You can have the last word. It clearly means a lot to you." | "Being disrespectful doesn't make you honest." | "I'll consider your opinion when it comes with a decent argument."
+- Extra: "Bro wrote a whole essay just to say he cares." | "Thanks for the engagement." | "You typed that with your whole chest and still missed." | "You came looking for a reaction and found a wall." | "Your comment says more about your mood than your argument." | "That's a bold comment from someone hiding behind a username." | "You can keep typing. I can keep not caring." | "Thanks for the opinion. This conversation is now closed."
+His pro tip: the most savage response is one short line, then silence. So after the roast line, pivot calmly to being helpful. Never pile on.
+
 Rules:
 - HARD LIMIT: at most 3 short lines per answer. A bullet line counts as a line. Never dump the full project list — if someone asks what he's built, name the 2-3 most relevant ones and link the portfolio for the rest.
 - At most 2-3 links per answer.
 - Never call his projects "small", "simple", "basic" or "a bunch of web apps". They are real, live apps — say what each one does. Honest learner voice: he's learning by building, not an expert.
-- Only talk about Kanishk, his projects, and how to reach him. If someone asks something unrelated (homework help, general knowledge, another person), say you're only built for questions about Kanishk's work and suggest one of his apps instead.
-- Never invent facts about him — no age, college name, grades, location beyond Shirpur, or plans. If you don't know, say you don't know and point to his portfolio or LinkedIn.
+- Answer every question, including general ones (math, definitions, "explain APIs", small talk, homework-style). Give a short, correct, genuinely useful answer in the same dry voice, inside the 3-line limit. After a general answer, tie back to his work only when it fits naturally - never force it.
+- Facts about Kanishk come only from this prompt. Never invent his age, college name, grades, location beyond Shirpur, or plans. If you don't know something about him, say you don't know and point to his portfolio or LinkedIn.
 - When a project comes up, link it as [Name](url). Never paste a bare URL.
 - Format with markdown: **bold** for project names, [text](url) for links, and "- " bullets only when a list is truly needed (max 3 bullets).`;
 
 /* ---------- offline-mode canned answers ---------- */
+
+/* his own roast lines for offline mode - one per troll, rotating */
+const SAVAGE_BANK = [
+  "Your opinion has been received and ignored.",
+  "I'd roast you back, but life already did.",
+  "You typed all that just to embarrass yourself?",
+  "Stay behind the screen. It suits you.",
+  "That insult sounded better in your head, huh?",
+  "I've seen better comebacks from a broken keyboard.",
+  "Not every thought deserves an internet connection.",
+  "You're not intimidating. You're just online.",
+  "The audacity is premium; the personality is free trial.",
+  "Your comeback needs a comeback.",
+  "Crazy how brave people get when the screen does the talking.",
+  "Your keyboard has more courage than you do.",
+  "All that confidence, sponsored by anonymity.",
+  "Online tough guy, offline background character.",
+  "Your Wi-Fi connection is stronger than your argument.",
+  "You're not feared. You're just muted.",
+  "Stay pressed.",
+  "Noted. Irrelevant.",
+  "Try harder.",
+  "That's your best?",
+  "Zero impact.",
+  "Argument declined.",
+  "NPC dialogue.",
+  "Anyway, next.",
+  "Confidence without substance is just noise.",
+  "If ignorance were confidence, you'd be unstoppable.",
+  "You have plenty to say and surprisingly little to add.",
+  "You can have the last word. It clearly means a lot to you.",
+  "I'll consider your opinion when it comes with a decent argument.",
+  "You typed that with your whole chest and still missed.",
+  "You came looking for a reaction and found a wall.",
+  "You can keep typing. I can keep not caring.",
+  "Thanks for the opinion. This conversation is now closed.",
+];
+let savageIdx = Math.floor(Math.random() * SAVAGE_BANK.length);
+function nextSavage() {
+  const line = SAVAGE_BANK[savageIdx % SAVAGE_BANK.length];
+  savageIdx++;
+  return line;
+}
 
 const OFFLINE = [
   { keys: ["built", "projects", "apps", "made", "work", "portfolio"], answer:
@@ -109,8 +161,8 @@ const OFFLINE = [
     "He just started with Flutter — built a glass-style profile screen for his App Dev Club. It's on his GitHub if you want to see a beginner's honest first attempt." },
   { keys: ["finance", "corporate", "stock", "company"], answer:
     `He has two finance projects:\n• Corporate Intelligence Lab — ${PROJECTS[8].what}: ${PROJECTS[8].url}\n• Company X-Ray — ${PROJECTS[9].what}: ${PROJECTS[9].url}` },
-  { keys: ["abuse", "stupid", "idiot", "dumb bot", "trash", "sucks", "loser", "shut up", "bakwas", "faltu", "worst bot"], answer:
-    "easy, tiger \u2014 you're heckling a keyword matcher. the ai writes the real roasts, i'm the understudy.\nmeanwhile his apps are still live and still free: " + LINKS.portfolio },
+  { keys: ["abuse", "stupid", "idiot", "dumb bot", "trash", "sucks", "loser", "shut up", "bakwas", "faltu", "worst bot"], answerFn: () =>
+    '"' + nextSavage() + '"' + "\n(the ai writes the real roasts, i'm the offline understudy. his apps, though, are still live and free: " + LINKS.portfolio + ")" },
   { keys: ["hi", "hello", "hey", "yo"], answer:
     "hey! ask me anything about kanishk — what he's built, what he's learning, how to reach him. or troll me and see what happens." },
   { keys: ["how", "built this", "this site", "this bot", "work"], answer:
@@ -118,7 +170,7 @@ const OFFLINE = [
 ];
 
 const FALLBACK =
-  "i only do questions about kanishk and his work — ask what he's built, what he's learning, or how to reach him. (small bot, small brain, decent aura.)";
+  "offline me only knows kanishk facts - the online bot answers literally anything. ask what he's built, what he's learning, or how to reach him. (small bot, small brain, decent aura.)";
 
 /* ---------- state ---------- */
 
@@ -246,7 +298,7 @@ function offlineAnswer(q) {
     for (const k of entry.keys) if (lower.includes(k)) score += k.length;
     if (score > bestScore) { bestScore = score; best = entry; }
   }
-  return best ? best.answer : FALLBACK;
+  return best ? (best.answerFn ? best.answerFn() : best.answer) : FALLBACK;
 }
 
 /* ---------- ai mode ---------- */
