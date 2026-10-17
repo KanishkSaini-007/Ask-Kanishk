@@ -1,4 +1,5 @@
-/* ============================================================
+/* v1.1 - robust markdown, short answers
+   ============================================================
    ASK KANISHK — a small bot that answers questions about
    Kanishk Saini and his work.
 
@@ -62,20 +63,24 @@ His links:
 - Email: ${LINKS.email}
 
 Rules:
-- Keep answers short and conversational. Two to four sentences unless someone asks for a list.
+- HARD LIMIT: at most 3 short lines per answer. A bullet line counts as a line. Never dump the full project list — if someone asks what he's built, name the 2-3 most relevant ones and link the portfolio for the rest.
+- At most 2-3 links per answer.
+- Never call his projects "small", "simple", "basic" or "a bunch of web apps". They are real, live apps — say what each one does. Honest learner voice: he's learning by building, not an expert.
 - Casual, friendly tone. Lowercase is fine. No corporate speak.
 - Only talk about Kanishk, his projects, and how to reach him. If someone asks something unrelated (homework help, general knowledge, another person), say you're only built for questions about Kanishk's work and suggest one of his apps instead.
 - Never invent facts about him — no age, college name, grades, location beyond Shirpur, or plans. If you don't know, say you don't know and point to his portfolio or LinkedIn.
-- When a project comes up, include its live link.
-- Format with markdown: **bold** for project names and [text](url) for links — the site renders both. Never paste a bare URL.`;
+- When a project comes up, link it as [Name](url). Never paste a bare URL.
+- Format with markdown: **bold** for project names, [text](url) for links, and "- " bullets only when a list is truly needed (max 3 bullets).`;
 
 /* ---------- offline-mode canned answers ---------- */
 
 const OFFLINE = [
   { keys: ["built", "projects", "apps", "made", "work", "portfolio"], answer:
-    "He's shipped 11 projects so far — all live, no sign-ups:\n\n" +
-    PROJECTS.map(p => `• ${p.name} — ${p.what}`).join("\n") +
-    `\n\nFull list with screenshots on his portfolio: ${LINKS.portfolio}` },
+    "He's shipped 11 live projects. Three to start with:\n" +
+    `• **${PROJECTS[0].name}** — ${PROJECTS[0].what}\n` +
+    `• **${PROJECTS[8].name}** — finance dashboard with real SEC data\n` +
+    `• **${PROJECTS[7].name}** — ${PROJECTS[7].what}\n` +
+    `Full list with screenshots: ${LINKS.portfolio}` },
   { keys: ["learning", "study", "skills", "stack", "language"], answer:
     "Right now he's learning HTML, CSS, JavaScript, Flutter, C and Git — first year, so everything on this site is him learning by building. He keeps it honest: learning, not mastered." },
   { keys: ["attendx", "attendance", "bunk"], answer:
@@ -113,32 +118,77 @@ let aiOnline = false; // set true only after the proxy answers a health check
 
 /* ---------- ui helpers ---------- */
 
+/* ---------- markdown rendering (bot messages) ----------
+   DOM-built (no innerHTML) so model output can't inject markup.
+   Handles: [label](url), bare URLs, **bold**, *italic*,
+   "- "/"* "/"• "/"1." bullet lines as real lists, and nesting
+   like **[Name](url)** or [**Name**](url). ---------- */
+
+function renderInline(text) {
+  const frag = document.createDocumentFragment();
+  const re = /\[([^\]]+)\]\(\s*(https?:\/\/[^\s)]+)\s*\)|(https?:\/\/[^\s"'<>]+)|\*\*([^*]+)\*\*|\*([^*\n]+)\*/g;
+  let m, last = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+    if (m[1] !== undefined) {                 // [label](url)
+      const a = document.createElement("a");
+      a.href = m[2];
+      a.appendChild(renderInline(m[1]));
+      a.target = "_blank";
+      a.rel = "noopener";
+      frag.appendChild(a);
+    } else if (m[3] !== undefined) {          // bare url -> linkify
+      let url = m[3], trail = "";
+      const t = url.match(/[.,;:!?)"'\]]+$/);
+      if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
+      const a = document.createElement("a");
+      a.href = url;
+      a.textContent = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      frag.appendChild(a);
+      if (trail) frag.appendChild(document.createTextNode(trail));
+    } else if (m[4] !== undefined) {          // **bold**
+      const b = document.createElement("strong");
+      b.appendChild(renderInline(m[4]));
+      frag.appendChild(b);
+    } else {                                  // *italic*
+      const em = document.createElement("em");
+      em.appendChild(renderInline(m[5]));
+      frag.appendChild(em);
+    }
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+  return frag;
+}
+
+function renderMarkdown(text) {
+  const frag = document.createDocumentFragment();
+  let list = null;
+  for (const raw of String(text).split("\n")) {
+    const line = raw.trim();
+    const bullet = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
+    if (bullet) {
+      if (!list) { list = document.createElement("ul"); frag.appendChild(list); }
+      const li = document.createElement("li");
+      li.appendChild(renderInline(bullet[1]));
+      list.appendChild(li);
+      continue;
+    }
+    list = null;
+    if (!line) continue;
+    if (frag.childNodes.length) frag.appendChild(document.createElement("br"));
+    frag.appendChild(renderInline(line));
+  }
+  return frag;
+}
+
 function addMsg(text, who) {
   const div = document.createElement("div");
   div.className = `msg ${who}`;
   if (who === "bot") {
-    // render markdown safely: **bold** and [label](url); everything else stays plain text
-    const frag = document.createDocumentFragment();
-    const re = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*/g;
-    let m, last = 0;
-    while ((m = re.exec(text)) !== null) {
-      frag.appendChild(document.createTextNode(text.slice(last, m.index)));
-      if (m[1] !== undefined) {
-        const a = document.createElement("a");
-        a.href = m[2];
-        a.textContent = m[1];
-        a.target = "_blank";
-        a.rel = "noopener";
-        frag.appendChild(a);
-      } else {
-        const b = document.createElement("strong");
-        b.textContent = m[3];
-        frag.appendChild(b);
-      }
-      last = m.index + m[0].length;
-    }
-    frag.appendChild(document.createTextNode(text.slice(last)));
-    div.appendChild(frag);
+    div.appendChild(renderMarkdown(text));
   } else {
     div.textContent = text;
   }
