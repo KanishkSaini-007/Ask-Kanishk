@@ -245,3 +245,31 @@ footer {
   .msg { max-width: 92%; }
   .hero { padding-top: 40px; }
 }
+
+/* v1.5 - code rendering for longer technical answers */
+.msg.bot code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.82em;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  word-break: break-word;
+}
+.msg.bot pre {
+  margin: 8px 0 2px;
+  padding: 10px 12px;
+  background: #0d0f08;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.msg.bot pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  word-break: normal;
+}
